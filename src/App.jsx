@@ -1,0 +1,87 @@
+import { useEffect, useRef, useState } from 'react'
+import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { Activity, ArrowRight, ArrowUpRight, Award, Bell, CheckCircle2, ChevronDown, Globe2, Heart, Home, Leaf, MapPin, Menu, PackageCheck, PawPrint, Recycle, ShieldCheck, ShoppingBag, Sprout, Trophy, Users, X } from 'lucide-react'
+import { challenges as baseChallenges, machines as baseMachines, pets, rewards as baseRewards } from './data/mockData.js'
+import PetArt from './components/PetArt.jsx'
+import { HomePage, PetPage, MapPage, ScanPage, ChallengesPage, RewardsPage, RedeemConfirm, LeaderboardPage, ImpactPage } from './pages/user/UserPages.jsx'
+import { AdminOverview, AdminMachines, AdminTransactions, AdminUsers, AdminChallenges, AdminRewards, AdminPets } from './pages/admin/AdminPages.jsx'
+
+const dayKey = date => { const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Phnom_Penh',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(date);return `${parts.find(p=>p.type==='year').value}-${parts.find(p=>p.type==='month').value}-${parts.find(p=>p.type==='day').value}` }
+const initialState = { points:1240, energy:85, xp:32, happiness:82, fed:0, bottles:43, todayBottles:1, weekBottles:12, todaySessions:1, kg:4.3, streak:3, lastDepositDay:dayKey(new Date()), visits:['GC-001'], claimed:[], redeemed:[], pointLedger:[{id:'GP-START',delta:1240,reason:'Demo account starting balance',date:'Nov 1'}], energyLedger:[{id:'GE-START',delta:85,reason:'Demo account starting balance',date:'Nov 1'}], tx:[
+  {id:'GC-TX-2408',machine:'ITC Smart Recycling Station',date:'Today · 9:42 AM',bottles:5,kg:.15,points:15,energy:15,status:'Verified'},
+  {id:'GC-TX-2399',machine:'Toul Kork Green Station',date:'Yesterday · 4:18 PM',bottles:8,kg:.24,points:24,energy:24,status:'Verified'},
+  {id:'GC-TX-2372',machine:'ITC Smart Recycling Station',date:'Nov 21 · 11:06 AM',bottles:6,kg:.18,points:18,energy:18,status:'Verified'},
+  {id:'GC-TX-2354',machine:'BKK Green Station',date:'Nov 19 · 2:34 PM',bottles:10,kg:.30,points:30,energy:30,status:'Verified'},
+  {id:'GC-TX-2310',machine:'Olympic Market Recycling Station',date:'Nov 17 · 10:22 AM',bottles:7,kg:.21,points:21,energy:21,status:'Verified'},
+  {id:'GC-TX-2278',machine:'Riverside Eco Station',date:'Nov 15 · 3:51 PM',bottles:4,kg:.12,points:12,energy:12,status:'Verified'},
+  {id:'GC-TX-2225',machine:'ITC Smart Recycling Station',date:'Nov 12 · 8:40 AM',bottles:9,kg:.27,points:27,energy:27,status:'Verified'},
+  {id:'GC-TX-2171',machine:'Toul Kork Green Station',date:'Nov 9 · 5:14 PM',bottles:6,kg:.18,points:18,energy:18,status:'Verified'},
+  {id:'GC-TX-2119',machine:'BKK Green Station',date:'Nov 6 · 1:26 PM',bottles:5,kg:.15,points:15,energy:15,status:'Verified'},
+  {id:'GC-TX-2050',machine:'ITC Smart Recycling Station',date:'Nov 2 · 9:03 AM',bottles:8,kg:.24,points:24,energy:24,status:'Verified'}
+] }
+const loadState = () => { try { const saved=JSON.parse(localStorage.getItem('greencity-state')||'{}');return { ...initialState, ...saved, todayBottles:saved.todayBottles??1,weekBottles:saved.weekBottles??12,todaySessions:saved.todaySessions??1 } } catch { return initialState } }
+const fmt = n => new Intl.NumberFormat('en-US').format(n)
+function Toast({toast,onClose}) { useEffect(()=>{if(toast){const t=setTimeout(onClose,3200);return()=>clearTimeout(t)}},[toast,onClose]); return toast?<div className="toast"><CheckCircle2 size={18}/>{toast}<button onClick={onClose}><X size={15}/></button></div>:null }
+function Modal({title,children,onClose}) { return <div className="modal-backdrop" onMouseDown={e=>e.target===e.currentTarget&&onClose()}><section className="modal"><button className="modal-close" onClick={onClose} aria-label="Close"><X size={18}/></button><h2>{title}</h2>{children}</section></div> }
+function App() {
+  const [state,setState]=useState(loadState), [machines,setMachines]=useState(()=>{try{return JSON.parse(localStorage.getItem('greencity-machines'))||baseMachines}catch{return baseMachines}}), [challengeData,setChallengeData]=useState(()=>{try{return JSON.parse(localStorage.getItem('greencity-challenges'))||baseChallenges}catch{return baseChallenges}}), [rewardData,setRewardData]=useState(()=>{try{return JSON.parse(localStorage.getItem('greencity-rewards'))||baseRewards}catch{return baseRewards}}), [petData,setPetData]=useState(()=>{try{return JSON.parse(localStorage.getItem('greencity-pets'))||pets}catch{return pets}})
+  const processedEvents=useRef(new Set(state.tx.map(t=>t.eventId).filter(Boolean)))
+  const [role,setRole]=useState(()=>localStorage.getItem('greencity-role')||'user'), [toast,setToast]=useState(''), [menuOpen,setMenuOpen]=useState(false), [modal,setModal]=useState(null)
+  const location=useLocation(), navigate=useNavigate()
+  useEffect(()=>localStorage.setItem('greencity-state',JSON.stringify(state)),[state]); useEffect(()=>localStorage.setItem('greencity-machines',JSON.stringify(machines)),[machines]); useEffect(()=>localStorage.setItem('greencity-challenges',JSON.stringify(challengeData)),[challengeData]); useEffect(()=>localStorage.setItem('greencity-rewards',JSON.stringify(rewardData)),[rewardData]); useEffect(()=>localStorage.setItem('greencity-pets',JSON.stringify(petData)),[petData]); useEffect(()=>localStorage.setItem('greencity-role',role),[role])
+  const say=(s)=>setToast(s)
+  const route=location.pathname
+  const admin=route.startsWith('/admin') || role==='admin'
+  const title=({ '/':'Good morning, Sophea','/pet':'Meet your companion','/map':'Find a station','/scan':'A small act, measured','/challenges':'Good things add up','/rewards':'A little something back','/leaderboard':'Growing together','/impact':'Your footprint, lighter','/admin':'City at a glance','/admin/machines':'Station network','/admin/transactions':'Verified activity','/admin/users':'People growing change','/admin/challenges':'Challenge studio','/admin/rewards':'Reward catalogue','/admin/pets':'Companion library' })[route] || 'Green City'
+  const patchState=patch=>setState(prev=>({...prev,...patch}))
+  const completeDeposit=(machineId,bottles,eventId=`GC-${Date.now().toString(36).toUpperCase()}`)=>{
+    const kg=Number((bottles*.03).toFixed(2)), points=Math.round(kg*100), energy=Math.round(kg*100)
+    if(processedEvents.current.has(eventId)||state.tx.some(t=>t.eventId===eventId)){say('This sensor event was already recorded.');return null}
+    processedEvents.current.add(eventId)
+    const machine=machines.find(m=>m.id===machineId)||machines[0]
+    const today=dayKey(new Date()), yesterday=dayKey(new Date(Date.now()-86400000)), txId=`GC-TX-${Date.now().toString().slice(-5)}`
+    setState(p=>({...p,points:p.points+points,energy:p.energy+energy,bottles:p.bottles+bottles,todayBottles:p.lastDepositDay===today?p.todayBottles+bottles:bottles,weekBottles:p.weekBottles+bottles,todaySessions:p.lastDepositDay===today?p.todaySessions+1:1,kg:Number((p.kg+kg).toFixed(2)),streak:p.lastDepositDay===today?p.streak:p.lastDepositDay===yesterday?p.streak+1:1,lastDepositDay:today,visits:[...new Set([...p.visits,machineId])],pointLedger:[{id:`GP-${txId}`,delta:points,reason:'Verified plastic deposit',date:'Today',reference:txId},...p.pointLedger],energyLedger:[{id:`GE-${txId}`,delta:energy,reason:'Verified plastic deposit',date:'Today',reference:txId},...p.energyLedger],tx:[{id:txId,eventId,machine:machine.name,date:'Just now',bottles,kg,points,energy,status:'Verified'},...p.tx]}))
+    setMachines(prev=>prev.map(m=>m.id===machineId?{...m,capacity:Math.min(100,m.capacity+Math.max(1,bottles)),today:Number((m.today+kg).toFixed(1))}:m))
+    say(`Deposit verified · +${points} points and ${energy} energy`)
+    return txId
+  }
+  const feedPet=()=>{if(state.energy<20){say('You need 20 Green Energy to feed Moss. Try recycling nearby.');return}setState(p=>({...p,energy:p.energy-20,happiness:Math.min(100,p.happiness+12),xp:p.xp+10,fed:p.fed+1,energyLedger:[{id:`GE-FEED-${Date.now()}`,delta:-20,reason:'Fed Moss',date:'Today'},...p.energyLedger]}));say('Moss is glowing. +10 experience')}
+  const claimChallenge=id=>{const challenge=challengeData.find(c=>c.id===id);if(!challenge||state.claimed.includes(id))return;const progress=progressFor(challenge,state);if(progress<challenge.target){say('Complete the challenge before claiming its reward.');return}setState(p=>({...p,points:p.points+challenge.reward,claimed:[...p.claimed,id],pointLedger:[{id:`GP-CH-${Date.now()}`,delta:challenge.reward,reason:`Challenge · ${challenge.name}`,date:'Today'},...p.pointLedger]}));say(`${challenge.reward} Green Points added`)}
+  const redeem=id=>{const reward=rewardData.find(r=>r.id===id);if(!reward||state.redeemed.includes(id))return;if(state.points<reward.cost){say('You need more Green Points for this reward.');return}setState(p=>({...p,points:p.points-reward.cost,redeemed:[...p.redeemed,id],pointLedger:[{id:`GP-RD-${Date.now()}`,delta:-reward.cost,reason:`Reward redemption · ${reward.name}`,date:'Today'},...p.pointLedger]}));setRewardData(p=>p.map(r=>r.id===id?{...r,stock:Math.max(0,r.stock-1)}:r));say(`${reward.name} redeemed`);setModal(null)}
+  const changeRole=r=>{setRole(r);navigate(r==='admin'?'/admin':'/');setMenuOpen(false)}
+  if(route==='/login'||route==='/register') return <AuthPage register={route==='/register'} onLogin={r=>changeRole(r)} />
+  const userItems=[['/','Overview',Home],['/pet','My companion',PawPrint],['/map','Stations',MapPin],['/scan','Scan & recycle',Recycle],['/challenges','Challenges',Award],['/rewards','Rewards shop',ShoppingBag],['/leaderboard','Leaderboard',Trophy],['/impact','My impact',Activity]]
+  const adminItems=[['/admin','Overview',Home],['/admin/machines','Machines',MapPin],['/admin/transactions','Transactions',Activity],['/admin/users','Users',Users],['/admin/challenges','Challenges',Award],['/admin/rewards','Rewards',ShoppingBag],['/admin/pets','Pets',PawPrint]]
+  return <div className={`app-shell ${admin?'admin-shell':''}`}>
+    <aside className={`sidebar ${menuOpen?'open':''}`}><div className="brand"><div className="brand-mark"><Sprout size={22}/></div><span>green city<small>ទីក្រុងបៃតង</small></span><button className="mobile-close" onClick={()=>setMenuOpen(false)}><X/></button></div>
+      <div className="workspace-label">{admin?'MANAGEMENT':'YOUR CITY'}</div><nav>{(admin?adminItems:userItems).map(([to,label,Icon])=><NavLink key={to} to={to} end={to==='/'} onClick={()=>setMenuOpen(false)} className={({isActive})=>`nav-item ${isActive?'active':''}`}><Icon size={18}/><span>{label}</span>{to==='/scan'&&<span className="nav-new">LIVE</span>}</NavLink>)}</nav>
+      <div className="sidebar-bottom"><div className="impact-note"><span className="note-icon"><Leaf size={17}/></span><div><b>{state.kg.toFixed(1)} kg</b><small>kept in the loop</small></div><ArrowUpRight size={15}/></div><button className="role-switch" onClick={()=>changeRole(admin?'user':'admin')}><div className="avatar">{admin?'SC':'S'}</div><span><b>{admin?'Sophea Chann':'Sophea Chann'}</b><small>{admin?'City administrator':'ITC · Level 4'}</small></span><ChevronDown size={15}/></button></div>
+    </aside><div className="sidebar-scrim" onClick={()=>setMenuOpen(false)}></div>
+    <main className="main-area"><header className="topbar"><button className="menu-toggle" onClick={()=>setMenuOpen(true)}><Menu/></button><div className="crumb">{admin?'GREEN CITY / MANAGEMENT':'GOOD FOR THE CITY'}</div><div className="top-actions"><button className="icon-button notification" aria-label="Notifications" onClick={()=>say('You’re all caught up.') }><Bell size={18}/><i/></button><div className="top-divider"/><button className="balance" onClick={()=>navigate('/rewards')}><span className="balance-icon"><Leaf size={15}/></span><b>{fmt(state.points)}</b><span>GP</span></button><button className="profile" onClick={()=>say('Signed in as Sophea Chann')}><div className="avatar">S</div><span>Sophea</span><ChevronDown size={14}/></button></div></header>
+      <div className="page-wrap"><div className="page-heading"><div><div className="eyebrow">{admin?'OPERATIONS · PHNOM PENH':'TUESDAY, NOVEMBER 24'}</div><h1>{title}</h1></div>{admin?<span className="live-pill"><i/> Network live</span>:<div className="greeting-right"><span className="weather-chip"><span className="sun-dot"/> 29° Phnom Penh</span></div>}</div>
+      <Routes>
+        <Route path="/" element={<HomePage state={state} machines={machines} onScan={()=>navigate('/scan')} onFeed={feedPet} onMachine={id=>{navigate('/map');}} onChallenge={()=>navigate('/challenges')}/>}/>
+        <Route path="/pet" element={<PetPage state={state} petData={petData} onFeed={feedPet}/>}/>
+        <Route path="/map" element={<MapPage machines={machines} onScan={()=>navigate('/scan')} say={say}/>}/>
+        <Route path="/scan" element={<ScanPage machines={machines} onDeposit={completeDeposit} say={say}/>}/>
+        <Route path="/challenges" element={<ChallengesPage items={challengeData} state={state} onClaim={claimChallenge}/>}/>
+        <Route path="/rewards" element={<RewardsPage items={rewardData} state={state} onRedeem={id=>setModal({type:'redeem',id})}/>}/>
+        <Route path="/leaderboard" element={<LeaderboardPage state={state}/>}/>
+        <Route path="/impact" element={<ImpactPage state={state}/>}/>
+        <Route path="/admin" element={<AdminOverview state={state} machines={machines}/>}/>
+        <Route path="/admin/machines" element={<AdminMachines machines={machines} setMachines={setMachines} say={say}/>}/>
+        <Route path="/admin/transactions" element={<AdminTransactions state={state}/>}/>
+        <Route path="/admin/users" element={<AdminUsers state={state}/>}/>
+        <Route path="/admin/challenges" element={<AdminChallenges items={challengeData} setItems={setChallengeData} say={say}/>}/>
+        <Route path="/admin/rewards" element={<AdminRewards items={rewardData} setItems={setRewardData} say={say}/>}/>
+        <Route path="/admin/pets" element={<AdminPets items={petData} setItems={setPetData} say={say}/>}/>
+        <Route path="*" element={<HomePage state={state} machines={machines} onScan={()=>navigate('/scan')} onFeed={feedPet} onChallenge={()=>navigate('/challenges')}/>}/>
+      </Routes>
+      <footer className="footer"><span>GREEN CITY · A cleaner loop for Phnom Penh</span><span>Prototype experience <i>•</i> Hardware readings are simulated</span></footer></div></main>
+    {modal?.type==='redeem'&&<Modal title="Redeem this reward?" onClose={()=>setModal(null)}><RedeemConfirm reward={rewardData.find(r=>r.id===modal.id)} points={state.points} onCancel={()=>setModal(null)} onConfirm={()=>redeem(modal.id)}/></Modal>}
+    <Toast toast={toast} onClose={()=>setToast('')}/>
+  </div>
+}
+function AuthPage({register,onLogin}){const[mode,setMode]=useState(register?'register':'login'),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[error,setError]=useState('');const submit=e=>{e.preventDefault();if(!email.includes('@')){setError('Enter a valid email address.');return}if(password.length<6){setError('Password must be at least 6 characters.');return}onLogin('user')};return <div className="auth-page"><div className="auth-brand"><div className="brand-mark"><Sprout size={22}/></div><span>green city<small>ទីក្រុងបៃតង</small></span></div><div className="auth-content"><section className="auth-form-wrap"><div className="eyebrow">A BETTER KIND OF GROWTH</div><h1>{mode==='register'?'Start your own ripple.':'Welcome back, friend.'}</h1><p>Recycle in real life. Grow in a virtual world.</p><form onSubmit={submit}><label>Email address<input type="email" placeholder="you@example.com" value={email} onChange={e=>setEmail(e.target.value)}/></label><label>Password<input type="password" placeholder="At least 6 characters" value={password} onChange={e=>setPassword(e.target.value)}/></label>{error&&<div className="form-error">{error}</div>}<button className="button button-primary auth-submit">{mode==='register'?'Create your account':'Sign in'} <ArrowRight size={16}/></button></form><div className="auth-divider"><span/>or explore the demo<span/></div><button className="demo-login" onClick={()=>onLogin('user')}><span className="avatar">S</span><span><b>Continue as Sophea</b><small>Preloaded with points, a pet & activity</small></span><ArrowRight size={16}/></button><button className="admin-login" onClick={()=>onLogin('admin')}><ShieldCheck size={16}/> Explore the admin dashboard <ArrowRight size={15}/></button><div className="auth-toggle">{mode==='register'?'Already part of the loop?':'New to Green City?'} <button onClick={()=>setMode(mode==='register'?'login':'register')}>{mode==='register'?'Sign in':'Create account'}</button></div></section><aside className="auth-story"><span className="auth-story-kicker"><span className="online-dot"/> A CIRCULAR CITY STARTS WITH YOU</span><div className="auth-orbits"><span/><span/><span/><PetArt/></div><h2>A small act<br/>can grow into<br/><em>something living.</em></h2><p>Meet Moss. Every bottle you recycle helps your companion grow and your city breathe a little easier.</p><div className="auth-story-foot"><span><Recycle size={15}/> RECYCLE</span><ArrowRight size={15}/><span><Heart size={15}/> GROW</span><ArrowRight size={15}/><span><Globe2 size={15}/> REPEAT</span></div></aside></div><div className="auth-footer">GREEN CITY · PHNOM PENH <span>Prototype demo · Any valid email works</span></div></div>}
+
+export default App
