@@ -1,0 +1,19 @@
+export const gamePets = [
+  {id:'sproutling',name:'Sproutling',element:'Nature',rarity:'Common',kind:'Seed keeper',color:'#92b95e',accent:'#d9ef9c',hp:92,attack:18,defense:14,speed:17,skill:'Pollen Puff',description:'A small seed spirit that grows stronger wherever people care for the land.'},
+  {id:'moss',name:'Moss',element:'Nature',rarity:'Uncommon',kind:'Mekong turtle',color:'#54a878',accent:'#b7dd8c',hp:128,attack:22,defense:25,speed:10,skill:'Canopy Guard',description:'A riverbank guardian whose shell gathers the strength of every recycled bottle.'},
+  {id:'verdant-drake',name:'Verdant Drake',element:'Nature',rarity:'Epic',kind:'Canopy dragon',color:'#3b9d68',accent:'#b8eb86',hp:154,attack:35,defense:26,speed:22,skill:'Wildheart Surge',description:'An ancient canopy sentinel awakened by a thriving, litter-free river.'},
+  {id:'ember-cub',name:'Ember Cub',element:'Fire',rarity:'Common',kind:'Cinder fox',color:'#e77d50',accent:'#ffd17b',hp:86,attack:24,defense:12,speed:21,skill:'Kindle Dash',description:'A bright-footed cub who turns fallen leaves into harmless warmth.'},
+  {id:'flamewing',name:'Flamewing',element:'Fire',rarity:'Rare',kind:'Sunbird',color:'#ed684d',accent:'#ffc15a',hp:112,attack:33,defense:18,speed:29,skill:'Solar Flare',description:'A sunbird that carries clean energy from one green place to another.'},
+  {id:'bubblefin',name:'Bubblefin',element:'Water',rarity:'Uncommon',kind:'Reef otter',color:'#53a9c2',accent:'#b7edf0',hp:108,attack:20,defense:22,speed:24,skill:'Tide Ribbon',description:'A playful stream swimmer that keeps freshwater habitats in balance.'},
+  {id:'aquadrop',name:'Aquadrop',element:'Water',rarity:'Rare',kind:'Rain sprite',color:'#538bd1',accent:'#c6e8ff',hp:116,attack:29,defense:20,speed:25,skill:'Monsoon Mend',description:'A tiny rain spirit that restores life to dry and damaged places.'},
+  {id:'pebblit',name:'Pebblit',element:'Earth',rarity:'Common',kind:'Stone mole',color:'#a88c68',accent:'#e4c995',hp:119,attack:17,defense:27,speed:9,skill:'Pebble Toss',description:'A patient burrower who finds beauty in materials given a second life.'},
+  {id:'terrahorn',name:'Terrahorn',element:'Earth',rarity:'Epic',kind:'Forest bison',color:'#897c58',accent:'#d9c990',hp:165,attack:31,defense:32,speed:11,skill:'Rootquake',description:'A steadfast guardian whose footsteps help young forests take root.'},
+  {id:'voltkit',name:'Voltkit',element:'Lightning',rarity:'Uncommon',kind:'Cloud cat',color:'#7b75c8',accent:'#e1dcff',hp:94,attack:28,defense:14,speed:32,skill:'Static Pounce',description:'A quick cloud cat powered by the spark of community action.'},
+  {id:'stormtail',name:'Stormtail',element:'Lightning',rarity:'Legendary',kind:'Thunder lemur',color:'#5669b6',accent:'#c5d7ff',hp:138,attack:39,defense:21,speed:34,skill:'Skyline Arc',description:'A rare storm guardian that lights the way to a cleaner city.'},
+  {id:'gaia-guardian',name:'Gaia Guardian',element:'Nature',rarity:'Mythic',kind:'Worldseed spirit',color:'#498663',accent:'#e1d286',hp:190,attack:42,defense:36,speed:19,skill:'Living World',description:'A legendary embodiment of the bond between a community and its home.'},
+]
+export const initialGame = { owned:[{id:'owned-moss',petId:'moss',level:4,xp:32,favorite:true,habitat:'river'},{id:'owned-sproutling',petId:'sproutling',level:2,xp:12,favorite:false,habitat:'canopy'},{id:'owned-pebblit',petId:'pebblit',level:2,xp:8,favorite:false,habitat:'upland'}], team:['owned-moss','owned-sproutling','owned-pebblit'], fragments:{}, freeSummonDate:'', stage:0, trophies:0, wins:0, losses:0, history:[], items:{snack:2,seed:1}, islandLevel:1 }
+export const summonPools = {
+  normal:{cost:100,odds:{Common:55,Uncommon:25,Rare:12,Epic:6,Legendary:2}},
+  premium:{cost:500,odds:{Common:20,Uncommon:25,Rare:30,Epic:20,Legendary:5}},
+}
